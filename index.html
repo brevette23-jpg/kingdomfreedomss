@@ -1,0 +1,950 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Kingdom Budget Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Lato:wght@400;700&display=swap">
+<style>
+/* Layout: one calm column, three numbered steps, one "next step" card always on top.
+   Palette: royal plum, deep violet, gold leaf, warm ivory. */
+/* Dark is the default look. Light values follow the system setting unless the
+   person picks one with the theme button (stored on data-theme). */
+:root{
+  color-scheme:dark;
+  --bg:#17082b;
+  --panel:#2a1247;
+  --panel2:#361a5c;
+  --gold:#d4af37;
+  --gold-hi:#f3d77a;
+  --gold-lo:#9c7a1c;
+  --ink:#f8f2e2;
+  --muted:#cdbce6;
+  --rose:#ec8fa0;
+  --amber:#f2aa4c;
+  --good:#b8e8c4;
+  --field:rgba(0,0,0,.28);
+  --track:rgba(0,0,0,.35);
+  --glow:#4a2380;
+  --title-a:#fbe8a6;--title-b:#c9a227;--title-c:#8a6a16;
+  --serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --sans:'Lato',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    color-scheme:light;
+    --bg:#fbf6e9;--panel:#fffdf6;--panel2:#f4ecd6;--gold:#b8860b;--gold-hi:#7a5a0c;--gold-lo:#8a6a16;
+    --ink:#2a1247;--muted:#5b4a7a;--rose:#b03a5b;--amber:#9a5a06;--good:#1f6b3f;
+    --field:rgba(255,255,255,.75);--track:rgba(42,18,71,.12);--glow:#e9ddf7;
+    --title-a:#9a7416;--title-b:#7a5a0c;--title-c:#5b430a;
+  }
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#fbf6e9;--panel:#fffdf6;--panel2:#f4ecd6;--gold:#b8860b;--gold-hi:#7a5a0c;--gold-lo:#8a6a16;
+  --ink:#2a1247;--muted:#5b4a7a;--rose:#b03a5b;--amber:#9a5a06;--good:#1f6b3f;
+  --field:rgba(255,255,255,.75);--track:rgba(42,18,71,.12);--glow:#e9ddf7;
+  --title-a:#9a7416;--title-b:#7a5a0c;--title-c:#5b430a;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font:16px/1.55 var(--sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:20px 90px;
+  background-image:radial-gradient(900px 480px at 50% -120px,var(--glow) 0%,rgba(23,8,43,0) 70%);
+  background-repeat:no-repeat;
+}
+.wrap{max-width:640px;margin:0 auto}
+header{text-align:center;padding:12px 0 8px}
+.eyebrow{margin:0;font-size:.75rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-hi)}
+h1{
+  font-family:var(--serif);font-weight:700;font-size:clamp(2.2rem,8vw,3rem);
+  line-height:1.05;margin:.2em 0 .3em;text-wrap:balance;
+  background:linear-gradient(var(--title-a),var(--title-b) 70%,var(--title-c));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.verse{font-family:var(--serif);font-style:italic;font-size:1.15rem;color:var(--muted);margin:.2em auto 0;max-width:30em;text-wrap:balance}
+.verse-ref{display:block;font-style:normal;font-size:.85rem;color:var(--gold-hi);margin-top:2px}
+
+.card{
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid rgba(212,175,55,.32);
+  border-radius:18px;padding:18px;margin:0 0 16px;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+.focus{border-color:rgba(243,215,122,.7);box-shadow:0 0 0 4px rgba(212,175,55,.12),0 10px 30px rgba(0,0,0,.3)}
+.label{margin:0 0 6px;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-hi)}
+.next{margin:0;font-size:1.15rem;font-weight:700;text-wrap:pretty}
+.dots{display:flex;gap:8px;margin-top:12px;align-items:center}
+.dot{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--gold);background:transparent}
+.dot.done{background:var(--gold-hi);box-shadow:0 0 8px rgba(243,215,122,.6)}
+.dots span.lbl{margin-left:8px;font-size:.85rem;color:var(--muted)}
+
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}
+.tabs button{
+  min-height:52px;border-radius:14px;border:1px solid rgba(212,175,55,.4);
+  background:var(--field);color:var(--muted);font:700 .85rem var(--sans);cursor:pointer;line-height:1.2;padding:6px 4px;
+}
+.tabs button.on{background:linear-gradient(#f3d77a,#c9a227);color:#2a1247;border-color:transparent}
+
+h2{font-family:var(--serif);font-size:1.6rem;margin:0 0 4px;color:var(--gold-hi);font-weight:700}
+.hint{margin:0 0 14px;color:var(--muted);font-size:.95rem}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.calm{text-align:left;font-family:var(--serif);font-size:1.2rem}
+.verse-sm{margin:6px 0 0;font-style:italic;color:var(--gold-hi);font-size:1rem}
+
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(212,175,55,.14)}
+.row:last-of-type{border-bottom:0}
+.grow{flex:1 1 150px;min-width:0}
+.tx .grow{min-width:0}
+input,select{
+  font:16px var(--sans);color:var(--ink);background:var(--field);
+  border:1px solid rgba(212,175,55,.38);border-radius:12px;padding:11px 12px;min-height:46px;width:100%;
+}
+input::placeholder{color:var(--muted);opacity:.75}
+textarea{font:16px/1.5 var(--sans);color:var(--ink);background:var(--field);border:1px solid rgba(212,175,55,.38);border-radius:12px;padding:11px 12px;width:100%;resize:vertical;margin-top:6px;min-height:110px}
+textarea::placeholder{color:var(--muted);opacity:.75}
+.amt{flex:0 1 130px;width:130px}
+select{appearance:auto}
+label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:12px}
+label input,label select{margin-top:6px}
+.stack{display:block}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--gold-hi);outline-offset:2px}
+
+button{font-family:var(--sans);cursor:pointer}
+.btn{
+  min-height:50px;padding:0 22px;border:0;border-radius:999px;
+  background:linear-gradient(#f8e096,#c9a227);color:#2a1247;font-weight:700;font-size:1rem;
+  box-shadow:0 6px 18px rgba(212,175,55,.25);
+}
+.btn.big{width:100%;margin-top:4px}
+.btn-line{
+  min-height:46px;width:100%;margin-top:6px;background:transparent;color:var(--gold-hi);
+  border:1.5px dashed rgba(212,175,55,.6);border-radius:14px;font-weight:700;
+}
+.ghost{min-height:40px;padding:0 12px;background:transparent;border:1px solid rgba(212,175,55,.25);border-radius:12px;color:var(--muted)}
+.btn-danger{min-height:44px;padding:0 18px;background:transparent;border:1px solid var(--rose);color:var(--rose);border-radius:999px;font-weight:700}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 14px}
+.sum{margin:12px 0 0;padding-top:12px;border-top:1px solid rgba(212,175,55,.2);color:var(--muted)}
+.good{color:var(--good)}.warn{color:var(--amber)}.bad{color:var(--rose)}
+
+.tx .muted{word-break:break-word}
+.big-num{text-align:left}
+.amount{font-family:var(--serif);font-weight:700;font-size:3.4rem;line-height:1.1;margin:4px 0;color:var(--gold-hi);font-variant-numeric:tabular-nums}
+.amount.bad{color:var(--rose)}
+
+.bar-row{margin-bottom:16px}
+.bar-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.bar-top span:first-child{font-weight:700;min-width:0}
+.bar-top .small{color:var(--muted);font-variant-numeric:tabular-nums}
+.track{height:14px;border-radius:999px;background:var(--track);overflow:hidden;border:1px solid rgba(212,175,55,.2)}
+.fill{height:100%;border-radius:999px;transition:width .6s ease;background:linear-gradient(90deg,#8a6a16,#d4af37,#f3d77a)}
+.near .fill{background:linear-gradient(90deg,#b8741c,var(--amber))}
+.over .fill{background:linear-gradient(90deg,#b5536a,var(--rose))}
+.near .bar-top .small{color:var(--amber)}
+.over .bar-top .small{color:var(--rose)}
+.idle .fill{width:0}
+
+/* Royal journal */
+.book{
+  background:linear-gradient(160deg,#2f1656,#1a0a33);
+  border:2px solid var(--gold);border-radius:8px 22px 22px 8px;
+  box-shadow:inset 0 0 0 6px #1a0a33,inset 0 0 0 7px rgba(212,175,55,.45),0 14px 36px rgba(0,0,0,.45);
+  padding:28px 20px;margin-bottom:16px;
+}
+.book-title{font-family:var(--serif);font-size:2.2rem;font-weight:700;text-align:left;margin:0;line-height:1.1;
+  background:linear-gradient(var(--title-a),var(--title-b) 70%,var(--title-c));-webkit-background-clip:text;background-clip:text;color:transparent}
+.book-sub{text-align:left;font-family:var(--serif);font-style:italic;font-size:1.15rem;color:var(--muted);margin:6px 0 0}
+.orn{display:flex;align-items:center;gap:12px;color:var(--gold-hi);margin:16px 0;font-size:.95rem;letter-spacing:.2em;text-transform:uppercase}
+.orn::before,.orn::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.page{
+  background:linear-gradient(180deg,#f8f0d8,#ebdcb6);color:#2a1247;
+  border-radius:10px;padding:22px 20px;margin-bottom:16px;
+  box-shadow:0 6px 18px rgba(0,0,0,.3);border:1px solid rgba(138,106,22,.5);
+}
+.page h2{font-family:var(--serif);font-size:1.7rem;color:#2a1247;margin:0 0 8px}
+.page label{color:#4a3a66;margin-bottom:14px}
+.page input,.page textarea{background:rgba(255,255,255,.6);border-color:rgba(138,106,22,.55);color:#2a1247}
+.page input::placeholder,.page textarea::placeholder{color:#8a7aa6}
+.page .muted{color:#6b5a86}
+.page .ghost{color:#5b2a86;border-color:rgba(91,42,134,.45)}
+.page .btn{color:#2a1247}
+.prompt{font-family:var(--serif);font-style:italic;font-size:1.25rem;color:#5b2a86;margin:12px 0 4px;font-weight:700}
+.entry-date{font-family:var(--serif);font-size:1.6rem;font-weight:700;color:#2a1247;margin:0;line-height:1.15}
+.entry-verse{font-family:var(--serif);font-style:italic;font-size:1.1rem;color:#7a4f00;margin:6px 0 0}
+.entry-part{margin:14px 0 0}
+.entry-part h4{margin:0;font-size:.75rem;letter-spacing:.16em;text-transform:uppercase;color:#5b2a86}
+.entry-part p{margin:4px 0 0;white-space:pre-wrap;font-size:1.02rem;line-height:1.6;color:#2a1247}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));
+  transform:translate(-50%,20px);opacity:0;transition:.3s ease;pointer-events:none;
+  background:linear-gradient(#f8e096,#c9a227);color:#2a1247;font-weight:700;
+  padding:12px 20px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:90%;text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+.welcome{
+  position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px));
+  background:radial-gradient(800px 520px at 50% 0%,var(--glow) 0%,var(--bg) 70%);
+  transition:opacity .5s ease;
+}
+.welcome.out{opacity:0;pointer-events:none}
+.w-inner{max-width:420px}
+.w-title{font-family:var(--serif);font-weight:700;font-size:2.4rem;line-height:1.1;margin:0;
+  background:linear-gradient(var(--title-a),var(--title-b) 70%,var(--title-c));-webkit-background-clip:text;background-clip:text;color:transparent}
+.w-verse{font-family:var(--serif);font-size:1.5rem;font-style:italic;line-height:1.35;color:var(--ink);text-wrap:balance;margin:22px 0 6px}
+.w-ref{color:var(--gold-hi);margin:0 0 24px;font-size:.95rem}
+.w-bar{height:4px;border-radius:99px;background:rgba(212,175,55,.2);overflow:hidden;margin:0 auto 24px;max-width:220px}
+.w-bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,#c9a227,#f3d77a);animation:wfill 9.2s linear forwards}
+@keyframes wfill{to{width:100%}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.w-bar span{animation:none;width:100%}}
+/* Desktop: a fixed side column with the header, next step and tabs; content on the right */
+@media (min-width: 900px){
+  body{padding-block:32px 72px}
+  .wrap{max-width:1180px;display:grid;grid-template-columns:300px minmax(0,1fr);gap:32px;align-items:start}
+  .side{position:sticky;top:24px;min-width:0}
+  .side header{padding-top:0}
+  .side .tabs{grid-template-columns:1fr;gap:8px;margin:18px 0 0}
+  .side .tabs button{text-align:left;min-height:50px;padding:12px 16px}
+  main{min-width:0}
+  h1{font-size:3.2rem}
+}
+/* Help dialog */
+.help-ov{position:fixed;inset:0;z-index:60;background:rgba(10,4,20,.72);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.help-ov[hidden]{display:none!important}
+.help-box{background:var(--panel);color:var(--ink);border:1px solid rgba(212,175,55,.45);border-radius:18px;max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:22px;text-align:left;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.help-box h3{font-family:var(--serif);color:var(--gold-hi);font-size:1.35rem;margin:20px 0 6px}
+.help-box p,.help-box li{font-size:.95rem;line-height:1.5;margin:0 0 6px}
+.help-box ul{padding-left:20px;margin:4px 0 0}
+
+/* Monthly bar */
+.monthbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel);border:1px solid rgba(212,175,55,.32);border-radius:14px;padding:10px 12px;margin-bottom:16px}
+.monthbar .mbtn{min-width:48px;min-height:44px;font-size:1.3rem;padding:0 10px}
+.month-name{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;min-width:0}
+.month-name strong{font-family:var(--serif);font-size:1.4rem;color:var(--gold-hi)}
+
+/* Section transition: content rises in with a soft stagger when a tab opens */
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+main.enter > *{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+main.enter > *:nth-child(2){animation-delay:.07s}
+main.enter > *:nth-child(3){animation-delay:.14s}
+main.enter > *:nth-child(n+4){animation-delay:.2s}
+.tabs button.on{box-shadow:0 0 0 3px rgba(243,215,122,.28)}
+@media (prefers-reduced-motion:reduce){main.enter > *{animation:none}}
+[hidden]{display:none!important}
+</style>
+
+<div class="wrap">
+  <aside class="side">
+  <header>
+    <p class="eyebrow">Stewardship · Budget</p>
+    <p style="margin:10px 0 0;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="ghost" type="button" id="themeBtn">Switch to light mode</button><button class="ghost" type="button" id="helpBtn" aria-haspopup="dialog">Help</button></p>
+    <p id="syncStatus" class="muted small" style="margin:8px 0 0;text-align:center" role="status">Saved in this browser</p>
+    <h1>Kingdom Budget</h1>
+    <p class="verse" id="verse"></p>
+  </header>
+
+  <section class="card focus" aria-live="polite">
+    <p class="label">Your one next step</p>
+    <p class="next" id="nextStep"></p>
+    <div class="dots" id="dots" aria-label="Progress"></div>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button type="button" data-tab="goals" role="tab">1 · Dreams</button>
+    <button type="button" data-tab="plan" role="tab">2 · Plan</button>
+    <button type="button" data-tab="spend" role="tab">3 · Spend</button>
+    <button type="button" data-tab="dash" role="tab">4 · See</button>
+    <button type="button" data-tab="journal" role="tab">5 · Journal</button>
+  </nav>
+  </aside>
+
+  <main id="main"></main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<div class="help-ov" id="helpOv" hidden>
+  <div class="help-box" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <h2 id="helpTitle" style="margin:0">How to use this planner</h2>
+      <button class="ghost" type="button" id="helpClose" aria-label="Close help">Close</button>
+    </div>
+    <p class="hint" style="margin-top:10px">New here? Follow these steps in order. You can always come back to this page with the Help button.</p>
+
+    <h3>1. Start with your dreams</h3>
+    <p>The <b>Dreams</b> tab is where you write what you are working toward. Add a goal, set a target amount, and update how much you have saved. Tap <b>Mark done</b> when you reach it.</p>
+
+    <h3>2. Plan your pay</h3>
+    <ul>
+      <li><b>Pay schedule:</b> choose monthly, every 2 weeks, or weekly. For the last two, enter your first paycheck date.</li>
+      <li><b>Step 1:</b> enter what you take home each paycheck.</li>
+      <li><b>Step 2:</b> give each category a planned amount. Aim for nothing left unassigned.</li>
+      <li><b>Suggest 10% for giving</b> fills in your giving amount for you.</li>
+    </ul>
+
+    <h3>3. Log purchases</h3>
+    <p>In the <b>Spend</b> tab, enter an amount, pick a category, and add an optional note. Rough entries are fine. Tap <b>Budget tool</b> to read about budgeting methods and apply one to your plan.</p>
+
+    <h3>4. See where you stand</h3>
+    <p>The <b>See</b> tab shows what you have left to spend and a bar for each category. Gold means you are on track, amber means you are close to the limit, and rose means you are over.</p>
+
+    <h3>5. Write in your journal</h3>
+    <p>The <b>Journal</b> tab has three parts: thanksgiving, prayer, and reflection. Pick the date and add a verse if you like. Each entry is saved as its own page.</p>
+
+    <h3>Moving between pay periods</h3>
+    <p>The arrows at the top of Plan, Spend, and See move you to the previous or next pay period. Use <b>Back to this period</b> to return to today.</p>
+
+    <h3>What the words mean</h3>
+    <ul>
+      <li><b>Planned:</b> what you intend to spend in a category.</li>
+      <li><b>Spent:</b> what you have logged in that category.</li>
+      <li><b>Unassigned:</b> money you have not given a job yet.</li>
+      <li><b>Left to spend:</b> your income minus everything you have logged.</li>
+    </ul>
+
+    <h3>Good to know</h3>
+    <ul>
+      <li>Your information is saved in this browser only. Using another browser or device starts fresh.</li>
+      <li>Removing an item asks you to tap twice, so nothing disappears by accident.</li>
+      <li>The light and dark button is under the title. Your choice is remembered.</li>
+      <li>Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard Version®), © 2001 by Crossway.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="welcome" id="welcome" role="dialog" aria-label="Welcome">
+  <div class="w-inner">
+    <p class="eyebrow">Welcome, good steward</p>
+    <p class="w-title">Kingdom Budget</p>
+    <p class="w-verse" id="wVerse"></p>
+    <p class="w-ref" id="wRef"></p>
+    <p class="muted small" style="margin:-12px 0 20px">Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard Version®), © 2001 by Crossway.</p>
+    <div class="w-bar" aria-hidden="true"><span></span></div>
+    <button class="btn" type="button" id="wBegin">Begin</button>
+  </div>
+</div>
+
+<script>
+const KEY = 'kingdom-budget-v1';
+const VERSES = [
+  ['The plans of the diligent lead surely to abundance, but everyone who is hasty comes only to poverty.', 'Proverbs 21:5'],
+  ['Trust in the Lord with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths.', 'Proverbs 3:5-6'],
+  ['The Lord is my shepherd; I shall not want.', 'Psalm 23:1'],
+  ['And my God will supply every need of yours according to his riches in glory in Christ Jesus.', 'Philippians 4:19'],
+  ['For where your treasure is, there your heart will be also.', 'Matthew 6:21'],
+  ['Honor the Lord with your wealth and with the firstfruits of all your produce.', 'Proverbs 3:9'],
+  ['For which of you, desiring to build a tower, does not first sit down and count the cost, whether he has enough to complete it?', 'Luke 14:28'],
+  ['God is our refuge and strength, a very present help in trouble.', 'Psalm 46:1'],
+  ['Delight yourself in the Lord, and he will give you the desires of your heart.', 'Psalm 37:4'],
+  ['And let us not grow weary of doing good, for in due time we will reap, if we do not give up.', 'Galatians 6:9'],
+  ['Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand.', 'Isaiah 41:10']
+];
+const DEFAULT_CATS = ['Giving (tithe & offerings)','Savings','Housing','Utilities','Groceries','Transportation','Debt payments','Rest & fun','Other'];
+
+/* Budget methods: each split is a percent of income, keyed by the start of the category name */
+const METHODS = [
+  {key:'zero', name:'Zero-based', best:'Anyone who wants total control over every dollar.',
+    idea:'Income minus planned spending equals zero. Every dollar gets a job, including savings.',
+    steps:['List your income for the period.','Give every dollar a category.','Adjust until nothing is left unassigned.'], split:null},
+  {key:'give', name:'Give first', best:'Those who want generosity built into the plan.',
+    idea:'Giving and saving come first, then the needs, then everything else.',
+    steps:['Set giving at 10% and savings at 10%.','Plan the needs next.','Keep a little for rest and fun.'],
+    split:{'Giving':10,'Savings':10,'Housing':25,'Utilities':5,'Groceries':10,'Transportation':8,'Debt':7,'Rest':10,'Other':15}},
+  {key:'503020', name:'50 / 30 / 20', best:'A simple starting point with three buckets.',
+    idea:'About half for needs, 30% for wants, and 20% for savings and debt.',
+    steps:['Needs: housing, food, utilities, transport, minimum payments.','Wants: rest, fun, and extras.','Savings: emergency fund and future goals.'],
+    split:{'Giving':5,'Housing':25,'Utilities':5,'Groceries':10,'Transportation':5,'Debt':5,'Rest':15,'Other':15,'Savings':15}},
+  {key:'envelope', name:'Envelope', best:'Those who overspend in certain categories.',
+    idea:'Each category gets a fixed amount, like a labeled envelope. When it is empty, you stop spending there.',
+    steps:['Set an amount for each envelope.','Spend from the envelope only.','Move money between envelopes on purpose.'],
+    split:{'Housing':35,'Utilities':8,'Groceries':15,'Transportation':10,'Debt':7,'Rest':8,'Other':7,'Savings':10}},
+  {key:'payfirst', name:'Pay yourself first', best:'Those who struggle to save.',
+    idea:'Savings and giving come out the moment income arrives. Bills are paid from what is left.',
+    steps:['Move savings and giving first.','Pay debts and bills next.','Live on the remainder.'],
+    split:{'Savings':20,'Giving':10,'Debt':10,'Housing':30,'Utilities':8,'Groceries':10,'Transportation':5,'Rest':4,'Other':3}}
+];
+
+const fmt = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
+const money = n => fmt.format(Number(n) || 0);
+const uid = () => Math.random().toString(36).slice(2,9);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sum = a => a.reduce((t,x) => t + (Number(x) || 0), 0);
+const round2 = n => Math.round(n * 100) / 100;
+
+function freshState(){
+  return { tab:'goals', frequency:'monthly', anchor:'', month:monthKey(), months:{}, debts:[], journal:[], goals:[] };
+}
+function load(){
+  try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch(e) {}
+  return null;
+}
+/* Saving: every change is kept in this browser (localStorage). */
+function setStatus(msg){ const el = document.getElementById('syncStatus'); if (el) el.textContent = msg; }
+function save(){
+  S.updated = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+}
+
+let S = load() || freshState();
+/* Upgrade older saves (single budget) into the monthly structure */
+if (!S.months) {
+  S.months = {};
+  S.month = monthKey();
+  if (S.income) {
+    S.months[S.month] = { income: S.income, cats: S.cats, txns: S.txns || [] };
+    delete S.income; delete S.cats; delete S.txns;
+  }
+}
+S.frequency = S.frequency || 'monthly';
+S.anchor = S.anchor || '';
+S.month = S.month || currentPeriodKey();
+S.debts = S.debts || [];
+S.journal = S.journal || [];
+S.goals = S.goals || [];
+
+const incomeTotal = () => sum(M().income.map(i => i.amount));
+const plannedTotal = () => sum(M().cats.map(c => c.planned));
+const spentFor = id => sum(M().txns.filter(t => t.catId === id).map(t => t.amount));
+const spentTotal = () => sum(M().txns.map(t => t.amount));
+
+/* Monthly budgets: each month keeps its own income, plan and purchases.
+   A new month starts from the last month's income and planned amounts. */
+function monthKey(d = new Date()){ return d.toLocaleDateString('en-CA').slice(0, 7); }
+function shiftMonth(key, n){ const [y, m] = key.split('-').map(Number); return monthKey(new Date(y, m - 1 + n, 1)); }
+function monthLabel(key){ const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-US', {month:'long', year:'numeric'}); }
+function M(){
+  if (!S.months[S.month]) {
+    const prevKey = Object.keys(S.months).filter(k => k < S.month).sort().pop();
+    const prev = prevKey ? S.months[prevKey] : null;
+    S.months[S.month] = {
+      income: prev ? prev.income.map(i => ({id:uid(), name:i.name, amount:i.amount})) : [{id:uid(), name:'Paycheck', amount:0}],
+      cats: prev ? prev.cats.map(c => ({id:uid(), name:c.name, planned:c.planned})) : DEFAULT_CATS.map(n => ({id:uid(), name:n, planned:0})),
+      txns: []
+    };
+  }
+  return S.months[S.month];
+}
+/* Pay periods: monthly, every 2 weeks, or weekly.
+   Monthly keeps YYYY-MM keys; the others key each period by its start date. */
+const PERIOD_DAYS = { weekly: 7, biweekly: 14 };
+const isMonthly = () => !PERIOD_DAYS[S.frequency];
+function todayKey(){ return new Date().toLocaleDateString('en-CA'); }
+function dayNum(key){ const [y, m, d] = key.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 86400000); }
+function dayKey(n){ return new Date(n * 86400000).toISOString().slice(0, 10); }
+function currentPeriodKey(){
+  if (isMonthly()) return monthKey();
+  const step = PERIOD_DAYS[S.frequency];
+  const anchor = S.anchor || todayKey();
+  const diff = dayNum(todayKey()) - dayNum(anchor);
+  return dayKey(dayNum(anchor) + Math.floor(diff / step) * step);
+}
+function shiftPeriod(key, n){
+  if (isMonthly()) return shiftMonth(key, n);
+  return dayKey(dayNum(key) + n * PERIOD_DAYS[S.frequency]);
+}
+function periodLabel(key){
+  if (isMonthly()) return monthLabel(key);
+  const step = PERIOD_DAYS[S.frequency];
+  const fmtD = k => new Date(k + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const end = dayKey(dayNum(key) + step - 1);
+  return fmtD(key) + ' – ' + fmtD(end) + ', ' + end.slice(0, 4);
+}
+function scheduleHTML(){
+  const opts = [['monthly', 'Monthly'], ['biweekly', 'Every 2 weeks'], ['weekly', 'Weekly']];
+  const buttons = opts.map(([v, l]) => {
+    const on = S.frequency === v;
+    const style = on ? 'background:var(--gold-hi);color:#2a1247;border-color:transparent;font-weight:700' : '';
+    return '<button class="ghost" type="button" data-act="set-freq" data-id="' + v + '" aria-pressed="' + on + '" style="' + style + '">' + l + '</button>';
+  }).join('');
+  const extra = isMonthly() ? '' :
+    '<label>First paycheck date <input id="anchorDate" type="date" value="' + esc(S.anchor || todayKey()) + '"></label>' +
+    '<p class="muted small" style="margin:0">Each pay period starts on this date and repeats every ' + (S.frequency === 'weekly' ? 7 : 14) + ' days.</p>';
+  return '<section class="card"><h2>Pay schedule</h2>' +
+    '<p class="hint">Choose how often you are paid. Each pay period keeps its own income, plan, and purchases.</p>' +
+    '<div class="actions" style="margin-top:0">' + buttons + '</div>' + extra + '</section>';
+}
+
+function monthBarHTML(){
+  const isNow = S.month === currentPeriodKey();
+  return `
+  <div class="monthbar">
+    <button class="ghost mbtn" type="button" data-act="prev-month" aria-label="Previous month">‹</button>
+    <div class="month-name">
+      <strong>${esc(periodLabel(S.month))}</strong>
+      ${isNow ? '<span class="muted small">This month</span>' : '<button class="ghost" type="button" data-act="this-month">Back to this month</button>'}
+    </div>
+    <button class="ghost mbtn" type="button" data-act="next-month" aria-label="Next month">›</button>
+  </div>`;
+}
+
+function nextStep(){
+  const inc = incomeTotal();
+  if (!inc) return ['Enter your paycheck amount in Plan. Start with one number.', 'plan'];
+  if (!plannedTotal()) return ['Give your money a job. Tap "Suggest 10% for giving" in Plan, then fill in the rest.', 'plan'];
+  const un = round2(inc - plannedTotal());
+  if (un > 0) return [`${money(un)} has no job yet. Give it to a category or to Savings.`, 'plan'];
+  if (un < 0) return [`Your plan is ${money(-un)} over your income. Lower one category.`, 'plan'];
+  if (!M().txns.length) return ['Log your first purchase in Spend. Small and quick is fine.', 'spend'];
+  const over = M().cats.find(c => c.planned > 0 && spentFor(c.id) > c.planned);
+  if (over) return [`${over.name} is over budget. Pause it, or move money into it on purpose.`, 'dash'];
+  return ['You are on track. Take a breath and thank the Lord for the provision.', 'dash'];
+}
+
+function updateFocus(){
+  const [msg] = nextStep();
+  document.getElementById('nextStep').textContent = msg;
+  const inc = incomeTotal(), pl = plannedTotal();
+  const steps = [inc > 0, pl > 0 && round2(inc - pl) === 0, M().txns.length > 0];
+  const done = steps.filter(Boolean).length;
+  document.getElementById('dots').innerHTML =
+    steps.map(d => `<span class="dot ${d ? 'done' : ''}"></span>`).join('') +
+    `<span class="lbl">${done} of 3 steps done</span>`;
+  const sumEl = document.querySelector('[data-sum]');
+  if (sumEl) sumEl.innerHTML = planSumHTML();
+}
+
+function planSumHTML(){
+  const inc = incomeTotal(), pl = plannedTotal(), un = round2(inc - pl);
+  const cls = un < 0 ? 'bad' : un > 0 ? 'warn' : 'good';
+  const txt = un >= 0 ? `${money(un)} unassigned` : `${money(-un)} over`;
+  return `Income ${money(inc)} · Planned ${money(pl)} · <strong class="${cls}">${txt}</strong>`;
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function planHTML(){
+  return `
+  ${scheduleHTML()}
+  <section class="card">
+    <h2>Step 1 · What comes in</h2>
+    <p class="hint">Enter what you take home each pay period.</p>
+    ${M().income.map(i => `
+      <div class="row">
+        <input class="grow" data-f="income" data-id="${i.id}" data-k="name" value="${esc(i.name)}" aria-label="Income source name">
+        <input class="amt" type="number" inputmode="decimal" min="0" step="0.01" data-f="income" data-id="${i.id}" data-k="amount" value="${i.amount || ''}" placeholder="0.00" aria-label="Amount">
+        <button class="ghost" type="button" data-act="rm-income" data-id="${i.id}" aria-label="Remove income">×</button>
+      </div>`).join('')}
+    <button class="btn-line" type="button" data-act="add-income">+ Add another income</button>
+  </section>
+
+  <section class="card">
+    <h2>Step 2 · Give each dollar a job</h2>
+    <p class="hint">Set a planned amount for each category. The goal is nothing left unassigned.</p>
+    <div class="actions"><button class="btn" type="button" data-act="tithe">Suggest 10% for giving</button></div>
+    ${M().cats.map(c => `
+      <div class="row">
+        <input class="grow" data-f="cat" data-id="${c.id}" data-k="name" value="${esc(c.name)}" aria-label="Category name">
+        <input class="amt" type="number" inputmode="decimal" min="0" step="0.01" data-f="cat" data-id="${c.id}" data-k="planned" value="${c.planned || ''}" placeholder="0.00" aria-label="Planned amount">
+        <button class="ghost" type="button" data-act="rm-cat" data-id="${c.id}" aria-label="Remove category">×</button>
+      </div>`).join('')}
+    <button class="btn-line" type="button" data-act="add-cat">+ Add a category</button>
+    <p class="sum" data-sum>${planSumHTML()}</p>
+  </section>
+
+  <section class="card calm">
+    <p style="margin:0">Before you spend, pause. One sentence of prayer counts.</p>
+    <p class="verse-sm">"Honor the Lord with your wealth and with the firstfruits of all your produce." Proverbs 3:9</p>
+  </section>
+
+  <div class="actions"><button class="btn-danger" type="button" data-act="reset">Start over</button></div>`;
+}
+
+let methodsOpen = false;
+
+function applyMethod(key){
+  const m = METHODS.find(x => x.key === key);
+  if (!m) return;
+  if (!m.split) { S.tab = 'plan'; showToast('Assign each dollar yourself in Plan'); return; }
+  const inc = incomeTotal();
+  if (!inc) { showToast('Enter your income in Plan first'); return; }
+  M().cats.forEach(c => {
+    const hit = Object.keys(m.split).find(k => c.name.startsWith(k));
+    c.planned = hit ? round2(inc * m.split[hit] / 100) : 0;
+  });
+  showToast(`${m.name} applied to Plan`);
+}
+
+function methodsHTML(){
+  return `
+  <section class="card">
+    <h2>Budget tool</h2>
+    <p class="hint">Read how each budget works, or apply one to your Plan. You can change any amount afterward.</p>
+    ${METHODS.map(m => `
+      <div class="row" style="flex-direction:column;align-items:stretch">
+        <strong style="font-size:1.05rem">${esc(m.name)}</strong>
+        <span class="muted small">${esc(m.best)}</span>
+        <p class="small" style="margin:6px 0 0">${esc(m.idea)}</p>
+        <ol class="small muted" style="margin:6px 0 0;padding-left:20px">${m.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+        <div><button class="ghost" type="button" data-act="apply-method" data-id="${m.key}">${m.split ? 'Apply to Plan' : 'Open Plan'}</button></div>
+      </div>`).join('')}
+  </section>`;
+}
+
+function spendHTML(){
+  const opts = M().cats.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  const list = [...M().txns].reverse().slice(0, 30);
+  return `
+  <div style="display:flex;justify-content:flex-end;margin:0 0 10px">
+    <button class="ghost" type="button" data-act="toggle-methods">${methodsOpen ? 'Hide budget tool' : 'Budget tool'}</button>
+  </div>
+  ${methodsOpen ? methodsHTML() : ''}
+  <section class="card">
+    <h2>Log a purchase</h2>
+    <p class="hint">Quick and rough is fine. Accuracy grows with practice.</p>
+    <form id="txForm">
+      <label>Amount
+        <input id="txAmt" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required>
+      </label>
+      <label>Category
+        <select id="txCat">${opts}</select>
+      </label>
+      <label>Note (optional)
+        <input id="txNote" maxlength="60" placeholder="e.g. groceries at Kroger">
+      </label>
+      <button class="btn big" type="submit">Add purchase</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Recent</h2>
+    <p class="hint">The last 30 entries, newest first.</p>
+    ${list.length ? list.map(t => {
+      const c = M().cats.find(x => x.id === t.catId);
+      return `
+      <div class="row tx">
+        <div class="grow">
+          <strong>${money(t.amount)}</strong> <span class="muted">${esc(c ? c.name : 'Other')}</span>
+          ${t.note ? `<div class="muted small">${esc(t.note)}</div>` : ''}
+        </div>
+        <button class="ghost" type="button" data-act="rm-tx" data-id="${t.id}">Remove</button>
+      </div>`;
+    }).join('') : '<p class="muted">Nothing logged yet. The first entry is the hardest one.</p>'}
+  </section>`;
+}
+
+function dashHTML(){
+  const inc = incomeTotal(), spent = spentTotal(), left = round2(inc - spent);
+  const rows = M().cats.map(c => {
+    const sp = spentFor(c.id), p = c.planned;
+    const pct = p > 0 ? Math.min(sp / p * 100, 100) : (sp > 0 ? 100 : 0);
+    let st = 'ok';
+    if (p === 0 && sp === 0) st = 'idle';
+    else if (sp > p) st = 'over';
+    else if (p > 0 && sp / p >= 0.75) st = 'near';
+    const label = p > 0 ? `${money(sp)} of ${money(p)}` : `${money(sp)} spent · no plan yet`;
+    return `
+    <div class="bar-row ${st}">
+      <div class="bar-top"><span>${esc(c.name)}</span><span class="small">${label}</span></div>
+      <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+  return `
+  <section class="card big-num">
+    <p class="label">Left to spend</p>
+    <p class="amount ${left < 0 ? 'bad' : ''}">${money(left)}</p>
+    <p class="muted">Income ${money(inc)} minus ${money(spent)} spent</p>
+  </section>
+  <section class="card">
+    <h2>Each category</h2>
+    <p class="hint">Gold is healthy. Amber means nearly there. Rose means over budget.</p>
+    ${rows}
+  </section>`;
+}
+
+function goalsHTML(){
+  const cardFor = g => {
+    const target = Number(g.target) || 0, saved = Number(g.saved) || 0;
+    const pct = target > 0 ? Math.min(saved / target * 100, 100) : 0;
+    return `
+    <div class="row" style="flex-direction:column;align-items:stretch">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input class="grow" data-f="goal" data-id="${g.id}" data-k="title" value="${esc(g.title)}" aria-label="Goal or dream">
+        <button class="ghost" type="button" data-act="toggle-goal" data-id="${g.id}">${g.done ? 'Reopen' : 'Mark done'}</button>
+        <button class="ghost" type="button" data-act="rm-goal" data-id="${g.id}">Remove</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <input class="amt" type="number" inputmode="decimal" min="0" step="0.01" data-f="goal" data-id="${g.id}" data-k="target" value="${g.target || ''}" placeholder="Goal $" aria-label="Goal amount">
+        <input class="amt" type="number" inputmode="decimal" min="0" step="0.01" data-f="goal" data-id="${g.id}" data-k="saved" value="${g.saved || ''}" placeholder="Saved $" aria-label="Saved so far">
+        <input class="amt" type="date" data-f="goal" data-id="${g.id}" data-k="date" value="${esc(g.date || '')}" aria-label="Target date" style="width:150px">
+      </div>
+      <input style="margin-top:8px" data-f="goal" data-id="${g.id}" data-k="why" value="${esc(g.why || '')}" placeholder="Why this matters to me, or a verse I am holding onto" aria-label="Why this matters">
+      ${target > 0 ? `<div class="bar-row" style="margin:12px 0 0"><div class="bar-top"><span class="small">${money(saved)} of ${money(target)}</span><span class="small">${Math.round(pct)}%</span></div><div class="track"><div class="fill" style="width:${pct}%"></div></div></div>` : ''}
+    </div>`;
+  };
+  const open = S.goals.filter(g => !g.done);
+  const finished = S.goals.filter(g => g.done);
+  return `
+  <section class="card">
+    <h2>Goals &amp; dreams</h2>
+    <p class="hint">Write down what you are working toward. Commit your work to the Lord, and He will establish your plans. Proverbs 16:3 (ESV)</p>
+    <div class="actions"><button class="btn" type="button" data-act="add-goal">+ Add a goal or dream</button></div>
+    ${open.length ? open.map(cardFor).join('') : '<p class="muted">No open goals yet. Start with one dream, however small.</p>'}
+  </section>
+  ${finished.length ? `
+  <section class="card">
+    <h2>Accomplished</h2>
+    <p class="hint">Thank God for every step. Each one is worth remembering.</p>
+    ${finished.map(cardFor).join('')}
+  </section>` : ''}`;
+}
+
+function fmtDay(d){
+  const dt = new Date(d + 'T00:00:00');
+  return isNaN(dt) ? d : dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+}
+
+function journalHTML(){
+  const today = new Date().toLocaleDateString('en-CA');
+  const list = [...S.journal].sort((a, b) => b.date.localeCompare(a.date) || String(b.created).localeCompare(String(a.created)));
+  const part = (title, text) => text ? `<div class="entry-part"><h4>${title}</h4><p>${esc(text)}</p></div>` : '';
+  return `
+  <div class="book">
+    <p class="book-title">The Royal Journal</p>
+    <p class="book-sub">Write it down, and bring it to the King</p>
+    <div class="orn">✦</div>
+
+    <section class="page">
+      <h2>A new page</h2>
+      <form id="jForm">
+        <label>Date
+          <input id="jDate" type="date" value="${today}" required>
+        </label>
+        <label>Scripture I am reflecting on <span class="muted small">(optional)</span>
+          <input id="jVerse" maxlength="120" placeholder="e.g. Proverbs 3:5">
+        </label>
+        <p class="prompt">Give thanks for…</p>
+        <textarea id="jThanks" maxlength="1000" rows="3" placeholder="The blessings I notice today"></textarea>
+        <p class="prompt">Lay before the Lord…</p>
+        <textarea id="jPrayer" maxlength="1000" rows="4" placeholder="My requests, worries, and hopes"></textarea>
+        <p class="prompt">What is He teaching me?</p>
+        <textarea id="jRefl" maxlength="1000" rows="3" placeholder="What stood out, and what I will do about it"></textarea>
+        <button class="btn big" type="submit" style="margin-top:18px">Save to my journal</button>
+      </form>
+    </section>
+
+    <div class="orn">✦ Your pages ✦</div>
+    ${list.length ? list.map(j => `
+      <article class="page">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+          <div>
+            <p class="entry-date">${esc(fmtDay(j.date))}</p>
+            ${j.verse ? `<p class="entry-verse">${esc(j.verse)}</p>` : ''}
+          </div>
+          <button class="ghost" type="button" data-act="rm-journal" data-id="${j.id}">Remove</button>
+        </div>
+        ${part('Thanksgiving', j.thanks)}
+        ${part('Prayer', j.prayer)}
+        ${part('Reflection', j.refl)}
+      </article>`).join('') : '<p class="muted" style="text-align:center;font-family:var(--serif);font-style:italic;font-size:1.1rem">Your pages are empty for now. Even one sentence to God is a beginning.</p>'}
+  </div>`;
+}
+
+function render(){
+  document.querySelectorAll('.tabs button').forEach(b => {
+    const on = b.dataset.tab === S.tab;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', on);
+  });
+  const main = document.getElementById('main');
+  main.innerHTML = S.tab === 'goals' ? goalsHTML() : S.tab === 'plan' ? planHTML() : S.tab === 'spend' ? spendHTML() : S.tab === 'journal' ? journalHTML() : dashHTML();
+  if (['plan','spend','dash'].includes(S.tab)) main.insertAdjacentHTML('afterbegin', monthBarHTML());
+  const idx = new Date().getDate() % VERSES.length;
+  document.getElementById('verse').innerHTML =
+    `${esc(VERSES[idx][0])}<span class="verse-ref">${esc(VERSES[idx][1])}</span>`;
+  updateFocus();
+}
+
+function setTab(t){
+  S.tab = t; save(); render();
+  const m = document.getElementById('main');
+  m.classList.remove('enter');
+  void m.offsetWidth;
+  m.classList.add('enter');
+  clearTimeout(setTab._t);
+  setTab._t = setTimeout(() => m.classList.remove('enter'), 1200);
+}
+
+function armed(b){
+  if (b.dataset.arm === '1') return true;
+  b.dataset.arm = '1';
+  b.textContent = 'Tap again to confirm';
+  setTimeout(() => { b.dataset.arm = ''; b.textContent = b.dataset.label || 'Remove'; }, 3000);
+  return false;
+}
+
+function act(b){
+  const a = b.dataset.act;
+  const id = b.dataset.id;
+  if (['rm-income','rm-cat','rm-tx','rm-debt','rm-journal','rm-goal','reset'].includes(a)) {
+    b.dataset.label = b.textContent;
+    if (!armed(b)) return;
+  }
+  switch (a) {
+    case 'add-income': M().income.push({id:uid(), name:'Extra income', amount:0}); break;
+    case 'rm-income': if (M().income.length > 1) M().income = M().income.filter(i => i.id !== id); break;
+    case 'add-cat': M().cats.push({id:uid(), name:'New category', planned:0}); break;
+    case 'rm-cat': M().cats = M().cats.filter(c => c.id !== id); break;
+    case 'tithe': {
+      const g = M().cats.find(c => c.name.startsWith('Giving'));
+      if (g) g.planned = round2(incomeTotal() * 0.10);
+      showToast('Giving set to 10% of income');
+      break;
+    }
+    case 'prev-month': S.month = shiftPeriod(S.month, -1); break;
+    case 'next-month': S.month = shiftPeriod(S.month, 1); break;
+    case 'this-month': S.month = currentPeriodKey(); break;
+    case 'set-freq': S.frequency = id; if (!isMonthly() && !S.anchor) S.anchor = todayKey(); S.month = currentPeriodKey(); break;
+    case 'toggle-methods': methodsOpen = !methodsOpen; break;
+    case 'apply-method': applyMethod(id); break;
+    case 'add-goal': S.goals.push({id:uid(), title:'New goal', target:0, saved:0, date:'', why:'', done:false}); break;
+    case 'toggle-goal': { const g = S.goals.find(x => x.id === id); if (g) g.done = !g.done; break; }
+    case 'rm-goal': S.goals = S.goals.filter(g => g.id !== id); break;
+    case 'add-debt': S.debts.push({id:uid(), name:'New debt', balance:0, rate:0, minPay:0}); break;
+    case 'rm-debt': S.debts = S.debts.filter(d => d.id !== id); break;
+    case 'rm-journal': S.journal = S.journal.filter(j => j.id !== id); break;
+    case 'rm-tx': M().txns = M().txns.filter(t => t.id !== id); break;
+    case 'reset': S = freshState(); break;
+  }
+  save();
+  render();
+}
+
+document.querySelector('.tabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-tab]');
+  if (b) setTab(b.dataset.tab);
+});
+
+const main = document.getElementById('main');
+
+main.addEventListener('input', e => {
+  const f = e.target.dataset.f;
+  if (!f) return;
+  const list = f === 'income' ? M().income : f === 'cat' ? M().cats : f === 'goal' ? S.goals : S.debts;
+  const item = list.find(x => x.id === e.target.dataset.id);
+  if (!item) return;
+  const k = e.target.dataset.k;
+  item[k] = ['name', 'title', 'why', 'date'].includes(k) ? e.target.value : (Number(e.target.value) || 0);
+  save();
+  updateFocus();
+});
+
+main.addEventListener('change', e => {
+  if (e.target.id !== 'anchorDate' || !e.target.value) return;
+  S.anchor = e.target.value;
+  S.month = currentPeriodKey();
+  save();
+  render();
+});
+
+main.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (b) act(b);
+});
+
+main.addEventListener('submit', e => {
+  if (e.target.id === 'jForm') {
+    e.preventDefault();
+    const date = document.getElementById('jDate').value;
+    const prayer = document.getElementById('jPrayer').value.trim();
+    const refl = document.getElementById('jRefl').value.trim();
+    const thanks = document.getElementById('jThanks').value.trim();
+    const verse = document.getElementById('jVerse').value.trim();
+    if (!date) { showToast('Choose a date'); return; }
+    if (!prayer && !refl && !thanks) { showToast('Write a thanks, prayer, or reflection'); return; }
+    S.journal.push({ id: uid(), date, verse, thanks, prayer, refl, created: new Date().toISOString() });
+    save();
+    showToast('Saved. He hears you.');
+    render();
+    return;
+  }
+  if (e.target.id !== 'txForm') return;
+  e.preventDefault();
+  const amt = round2(Number(document.getElementById('txAmt').value));
+  if (!(amt > 0)) { showToast('Enter an amount above zero'); return; }
+  M().txns.push({
+    id: uid(),
+    amount: amt,
+    catId: document.getElementById('txCat').value,
+    note: document.getElementById('txNote').value.trim(),
+    date: new Date().toISOString()
+  });
+  save();
+  showToast('Logged. Well done.');
+  render();
+});
+
+/* Help dialog */
+(function help(){
+  const ov = document.getElementById('helpOv');
+  const btn = document.getElementById('helpBtn');
+  const close = () => { ov.hidden = true; btn.focus(); };
+  btn.addEventListener('click', () => { ov.hidden = false; document.getElementById('helpClose').focus(); });
+  document.getElementById('helpClose').addEventListener('click', close);
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !ov.hidden) close(); });
+})();
+
+/* Light / dark theme toggle */
+(function theme(){
+  const root = document.documentElement;
+  const btn = document.getElementById('themeBtn');
+  const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+  try {
+    const saved = localStorage.getItem('kingdom-theme');
+    if (saved === 'light' || saved === 'dark') root.dataset.theme = saved;
+  } catch (e) {}
+  const current = () => root.dataset.theme || (mq && mq.matches ? 'light' : 'dark');
+  const label = () => { btn.textContent = current() === 'light' ? 'Switch to dark mode' : 'Switch to light mode'; };
+  btn.addEventListener('click', () => {
+    const next = current() === 'light' ? 'dark' : 'light';
+    root.dataset.theme = next;
+    try { localStorage.setItem('kingdom-theme', next); } catch (e) {}
+    label();
+  });
+  label();
+})();
+
+/* Welcome screen: a fresh verse every time the planner opens */
+const WELCOME = [
+  ['But they who wait for the Lord shall renew their strength; they shall mount up with wings like eagles; they shall run and not be weary; they shall walk and not faint.', 'Isaiah 40:31'],
+  ['For I know the plans I have for you, declares the Lord, plans for welfare and not for evil, to give you a future and a hope.', 'Jeremiah 29:11'],
+  ['for the joy of the Lord is your strength.', 'Nehemiah 8:10'],
+  ['For God gave us a spirit not of fear but of power and love and self-control.', '2 Timothy 1:7'],
+  ['Commit your work to the Lord, and your plans will be established.', 'Proverbs 16:3'],
+  ['Whatever you do, work heartily, as for the Lord and not for men.', 'Colossians 3:23'],
+  ['And let us not grow weary of doing good, for in due time we will reap, if we do not give up.', 'Galatians 6:9'],
+  ['Trust in the Lord with all your heart, and do not lean on your own understanding.', 'Proverbs 3:5'],
+  ['God is our refuge and strength, a very present help in trouble.', 'Psalm 46:1'],
+  ['Delight yourself in the Lord, and he will give you the desires of your heart.', 'Psalm 37:4'],
+  ['Let all that you do be done in love.', '1 Corinthians 16:14'],
+  ['Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand.', 'Isaiah 41:10']
+];
+(function welcome(){
+  const w = document.getElementById('welcome');
+  if (!w) return;
+  const pick = WELCOME[Math.floor(Math.random() * WELCOME.length)];
+  document.getElementById('wVerse').textContent = '"' + pick[0] + '"';
+  document.getElementById('wRef').textContent = pick[1];
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    w.classList.add('out');
+    setTimeout(() => { w.hidden = true; }, 500);
+  };
+  document.getElementById('wBegin').addEventListener('click', close);
+  setTimeout(close, 9200);
+})();
+
+render();
+</script>
